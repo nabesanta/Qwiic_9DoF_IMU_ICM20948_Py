@@ -55,7 +55,7 @@ def runExample():
 		return
 
 	IMU.begin()
-
+	file = open("accel_data.csv", "w")
 	while True:
 		if IMU.dataReady():
 			IMU.getAgmt() # read all axis and temp from sensor, note this also updates all instance variables
@@ -70,7 +70,8 @@ def runExample():
 			, '\t', '{: 06d}'.format(IMU.myRaw)\
 			, '\t', '{: 06d}'.format(IMU.mzRaw)\
 			)
-			time.sleep(0.03)
+		        file.write(str(IMU.axRaw) + "," + str(IMU.ayRaw) + "," + str(IMU.azRaw) + "," + str(IMU.gxRaw) + "," + str(IMU.gyRaw) + "," + str(IMU.gzRaw) + "\n")  
+		        time.sleep(0.02)
 		else:
 			print("Waiting for data")
 			time.sleep(0.5)
