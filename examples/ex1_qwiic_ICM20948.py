@@ -38,33 +38,49 @@
 #==================================================================================
 # Example 1
 
+# from __future__ import print_function は、Python 2.x のコードで Python 3.x の機能を使用するための特殊な文です。
 from __future__ import print_function
 import qwiic_icm20948
+from .madgwick_py import madgwickahrs
 import time
 import sys
 
 def runExample():
     print("\nSparkFun 9DoF ICM-20948 Sensor  Example 1\n")
+    # インスタンスの設定
     IMU = qwiic_icm20948.QwiicIcm20948()
-
+    madgwick = madgwickahrs.MadgwickAHRS()
+    time_count = 0
+    # 繋がっているかの確認
     if IMU.connected == False:
         print("The Qwiic ICM20948 device isn't connected to the system. Please check your connection", file=sys.stderr)
         return
 
+    # start IMU data accessing
     IMU.begin()
+    # csvファイルへの書き込み
     file = open("accel_data.csv", "w")
     while True:
-        file.write(",ax,ay,az,gx,gy,gz,time")
+        file.write(",ax,ay,az,gx,gy,gz,roll,pitch,yaw,time")
+
         for i in range(1000):
             if IMU.dataReady():
                 IMU.getAgmt() # read all axis and temp from sensor, note this also updates all instance variables
-                print('{: 06d}'.format(IMU.axRaw), '\t', '{: 06d}'.format(IMU.ayRaw), '\t', '{: 06d}'.format(IMU.azRaw),
-                      '\t', '{: 06d}'.format(IMU.gxRaw), '\t', '{: 06d}'.format(IMU.gyRaw), '\t', '{: 06d}'.format(IMU.gzRaw),
-                      '\t', '{: 06d}'.format(IMU.mxRaw), '\t', '{: 06d}'.format(IMU.myRaw), '\t', '{: 06d}'.format(IMU.mzRaw))
-            
+                # 6桁の数字で、タブ区切り
+                print('{:7.2f}'.format(IMU.axRaw), '\t', '{:7.2f}'.format(IMU.ayRaw), '\t', '{:7.2f}'.format(IMU.azRaw),
+                      '\t', '{:7.2f}'.format(IMU.gxRaw), '\t', '{:7.2f}'.format(IMU.gyRaw), '\t', '{:7.2f}'.format(IMU.gzRaw),
+                      '\t', '{:7.2f}'.format(IMU.mxRaw), '\t', '{:7.2f}'.format(IMU.myRaw), '\t', '{:7.2f}'.format(IMU.mzRaw))
+                accelerometer = [IMU.axRaw, IMU.ayRaw, IMU.azRaw]
+                gyroscope = [IMU.gxRaw, IMU.gyRaw, IMU.gzRaw]
+                roll, pitch, yaw = madgwick.update_imu(gyroscope, accelerometer)
+                # csvファイルに書き込み
                 file.write(str(i) + "," + str(IMU.axRaw) + "," + str(IMU.ayRaw) + "," + str(IMU.azRaw) + "," + str(IMU.gxRaw) + ","
-                           + str(IMU.gyRaw) + "," + str(IMU.gzRaw) + "," + str(0) + "," + "\n")
-                time.sleep(0.02)
+                           + str(IMU.gyRaw) + "," + str(IMU.gzRaw) + "," + str(roll) + ","
+                           + str(pitch) + "," + str(yaw) + "," + str(time) + "\n")
+                # 一定の時間で実行されるために、time.sleepを入れてる.
+                # サンプリングレートは100HZ
+                time_count += 0.01
+                time.sleep(0.01)
             else:
                 print("Waiting for data")
                 time.sleep(0.5)

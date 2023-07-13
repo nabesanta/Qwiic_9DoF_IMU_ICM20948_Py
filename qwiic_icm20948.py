@@ -71,7 +71,7 @@ _AVAILABLE_I2C_ADDRESS = [0x69, 0x68]
 _validChipIDs = [0xEA]
 
 # Internal Sensor IDs, used in various functions as arguments to know who to affect
-ICM_20948_Internal_Acc = (1 << 0)
+ICM_20948_Internal_Acc = (1 << 0) # 左シフトに0bitシフト
 ICM_20948_Internal_Gyr = (1 << 1)
 ICM_20948_Internal_Mag = (1 << 2)
 ICM_20948_Internal_Tmp = (1 << 3)
@@ -242,7 +242,8 @@ class QwiicIcm20948(object):
 	AGB1_REG_SELF_TEST_Z_ACCEL = 		0x10
 	AGB1_REG_XA_OFFS_H = 				0x14 
 	AGB1_REG_XA_OFFS_L = 				0x15
-	AGB1_REG_YA_OFFS_H = 				0x17 
+	AGB1_REG_YA_OFFS_H = 		
+			0x17 
 	AGB1_REG_YA_OFFS_L = 				0x18
 	AGB1_REG_ZA_OFFS_H = 				0x1A 
 	AGB1_REG_ZA_OFFS_L = 				0x1B
@@ -336,18 +337,19 @@ class QwiicIcm20948(object):
 		""" 
 			Determine if a ICM20948 device is conntected to the system..
 
-			:return: True if the device is connected, otherwise False.
+			:return: True if the de# vice is connected, otherwise False.
 			:rtype: bool
 
 		"""
 		return qwiic_i2c.isDeviceConnected(self.address)
 
+	# isConnected専用のプロパティとなる
 	connected = property(isConnected)
 
 	# ----------------------------------
 	# setBank()
 	#
-	# Sets the bank register of the ICM20948 module
+	# Sets the bank register of the ICM20948 
 	def setBank(self, bank):
 		""" 
 			Sets the bank register of the ICM20948 module
@@ -672,6 +674,9 @@ class QwiicIcm20948(object):
 		if input > 32767:
 			input -= 65536
 		return input
+	
+	def RoundInt(self, input):
+		return round((input/32768.0), 3)
 
 	# ----------------------------------
 	# getAgmt()
@@ -720,6 +725,18 @@ class QwiicIcm20948(object):
 		self.mxRaw = self.ToSignedInt(self.mxRaw)
 		self.myRaw = self.ToSignedInt(self.myRaw)
 		self.mzRaw = self.ToSignedInt(self.mzRaw)
+
+		self.axRaw = self.RoundInt(self.axRaw)
+		self.ayRaw = self.RoundInt(self.ayRaw)
+		self.azRaw = self.RoundInt(self.azRaw)
+
+		self.gxRaw = self.RoundInt(self.gxRaw)
+		self.gyRaw = self.RoundInt(self.gyRaw)
+		self.gzRaw = self.RoundInt(self.gzRaw)
+
+		self.mxRaw = self.RoundInt(self.mxRaw)
+		self.myRaw = self.RoundInt(self.myRaw)
+		self.mzRaw = self.RoundInt(self.mzRaw)
 
 		# check for data read error
 		if buff:
